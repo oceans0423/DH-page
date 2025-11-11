@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-gram 完全指南 - Glassmorphism 教學</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', '微軟正黑體', Roboto, Oxygen, Ubuntu, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255, 119, 168, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 60%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+            z-index: -2;
+        }
+
+        /* Floating shapes for depth */
+        .floating-shape {
+            position: fixed;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(120, 119, 198, 0.2), rgba(255, 119, 168, 0.1));
+            filter: blur(40px);
+            animation: float 20s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        .shape1 {
+            width: 400px;
+            height: 400px;
+            top: -200px;
+            right: -200px;
+            animation-delay: 0s;
+        }
+
+        .shape2 {
+            width: 300px;
+            height: 300px;
+            bottom: -150px;
+            left: -150px;
+            animation-delay: 5s;
+            background: linear-gradient(135deg, rgba(255, 119, 168, 0.2), rgba(120, 219, 255, 0.1));
+        }
+
+        .shape3 {
+            width: 350px;
+            height: 350px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 10s;
+            background: linear-gradient(135deg, rgba(120, 219, 255, 0.2), rgba(120, 119, 198, 0.1));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Header with glassmorphism */
+        .header {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .header:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            color: #4a5568;
+            font-size: 1.2em;
+            font-weight: 300;
+        }
+
+        /* Content cards with glassmorphism */
+        .card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.01);
+            background: rgba(255, 255, 255, 0.75);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
+        }
+
+        h2 {
+            color: #2d3748;
+            font-size: 2em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2::before {
+            content: "✨";
+            font-size: 0.8em;
+        }
+
+        h3 {
+            color: #4a5568;
+            font-size: 1.5em;
+            margin: 25px 0 15px;
+            padding-left: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        p {
+            color: #2d3748;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        /* N-gram examples with special styling */
+        .ngram-example {
+            background: rgba(120, 119, 198, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(120, 119, 198, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .ngram-example:hover {
+            background: rgba(120, 119, 198, 0.12);
+            transform: translateX(5px);
+        }
+
+        .ngram-item {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(120, 119, 198, 0.15), rgba(255, 119, 168, 0.1));
+            backdrop-filter: blur(5px);
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 10px;
+            border: 1px solid rgba(120, 119, 198, 0.2);
+            color: #4a5568;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .ngram-item:hover {
+            background: linear-gradient(135deg, rgba(120, 119, 198, 0.25), rgba(255, 119, 168, 0.2));
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(120, 119, 198, 0.2);
+        }
+
+        /* Lists */
+        ul, ol {
+            color: #2d3748;
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 10px 0;
+            line-height: 1.8;
+            font-size: 1.05em;
+        }
+
+        /* Strong text */
+        strong {
+            color: #1a202c;
+            font-weight: 600;
+        }
+
+        /* Interactive demo section */
+        .demo-section {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(120, 119, 198, 0.2);
+        }
+
+        .demo-input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid rgba(120, 119, 198, 0.3);
+            border-radius: 10px;
+            color: #2d3748;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .demo-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(120, 119, 198, 0.2);
+        }
+
+        .demo-input::placeholder {
+            color: #a0aec0;
+        }
+
+        .demo-button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .demo-button:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(120, 119, 198, 0.3);
+        }
+
+        .demo-output {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            min-height: 100px;
+            color: #2d3748;
+        }
+
+        /* Code blocks */
+        code {
+            background: rgba(120, 119, 198, 0.1);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            color: #4a5568;
+        }
+
+        /* Scroll to top button */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            color: white;
+            font-size: 1.5em;
+            box-shadow: 0 5px 20px rgba(120, 119, 198, 0.3);
+        }
+
+        .scroll-top.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .scroll-top:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(120, 119, 198, 0.4);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            h2 { font-size: 1.5em; }
+            .card { padding: 20px; }
+            body { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating background shapes -->
+    <div class="floating-shape shape1"></div>
+    <div class="floating-shape shape2"></div>
+    <div class="floating-shape shape3"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>什麼是 N-gram？</h1>
+            <p class="subtitle">探索自然語言處理的基礎概念，理解文字背後的數學魔法</p>
+        </div>
+
+        <!-- Introduction Card -->
+        <div class="card">
+            <p>你是否曾經好奇，你的手機鍵盤是怎麼「猜到」你下一個想打的字？或者，為什麼 Google 搜尋總是能精準地找到你要的資料，即使你只打了幾個關鍵字？</p>
+            <p>這些神奇功能的背後，藏著一個很酷（而且其實很簡單）的概念，叫做 <strong>N-gram</strong>。</p>
+        </div>
+
+        <!-- What is N-gram -->
+        <div class="card">
+            <h2>N-gram 到底是什麼？</h2>
+            
+            <p>想像一下，你拿到一句話：</p>
+            
+            <div class="ngram-example">
+                <strong style="font-size: 1.3em;">「今天天氣很好」</strong>
+            </div>
+            
+            <p>對我們來說，這句話有完整的意思。但對電腦來說，這只是一串沒有意義的符號。為了讓電腦「理解」這句話，我們需要把它拆解成更小的、可分析的單位。</p>
+            
+            <p><strong>N-gram 就是「拆解句子的方法」之一。</strong></p>
+            
+            <p>在這裡，「N」只是一個數字，代表「你要一次切幾個字（或詞）」。</p>
+            
+            <p>讓我們來實際切切看：</p>
+        </div>
+
+        <!-- N-gram Types -->
+        <div class="card">
+            <h3>1. 當 N = 1 (Unigram，一元語法)</h3>
+            <p>這最簡單，就是把整句話的「每個詞」都分開。</p>
+            <div class="ngram-example">
+                <span class="ngram-item">今天</span>
+                <span class="ngram-item">天氣</span>
+                <span class="ngram-item">很</span>
+                <span class="ngram-item">好</span>
+            </div>
+            <p>這就像是製作一本字典，告訴電腦這句話裡出現了哪些「單字」。</p>
+        </div>
+
+        <div class="card">
+            <h3>2. 當 N = 2 (Bigram，二元語法)</h3>
+            <p>這開始變得有趣了。我們一次切「兩個相鄰的詞」，並且「重疊」著切：</p>
+            <div class="ngram-example">
+                <span class="ngram-item">今天 天氣</span>
+                <span class="ngram-item">天氣 很</span>
+                <span class="ngram-item">很 好</span>
+            </div>
+            <p>你有沒有發現？這樣切，我們不但得到了「單字」，還得到了「單字之間的<strong>順序</strong>和<strong>關係</strong>」。電腦開始知道，「今天」後面很常接著「天氣」。</p>
+        </div>
+
+        <div class="card">
+            <h3>3. 當 N = 3 (Trigram，三元語法)</h3>
+            <p>你可能猜到了，就是一次切「三個相鄰的詞」：</p>
+            <div class="ngram-example">
+                <span class="ngram-item">今天 天氣 很</span>
+                <span class="ngram-item">天氣 很 好</span>
+            </div>
+            <p>這能抓到更長的詞語組合。</p>
+        </div>
+
+        <!-- Interactive Demo -->
+        <div class="card">
+            <h2>互動體驗：試試看 N-gram 分析</h2>
+            <div class="demo-section">
+                <input type="text" class="demo-input" id="textInput" placeholder="輸入一段文字，例如：人工智慧改變世界" value="人工智慧改變世界">
+                <div>
+                    <button class="demo-button" onclick="generateNgrams(1)">Unigram</button>
+                    <button class="demo-button" onclick="generateNgrams(2)">Bigram</button>
+                    <button class="demo-button" onclick="generateNgrams(3)">Trigram</button>
+                </div>
+                <div class="demo-output" id="output">
+                    點擊上方按鈕來看看不同的 N-gram 分析結果！
+                </div>
+            </div>
+        </div>
+
+        <!-- Why N-gram is Useful -->
+        <div class="card">
+            <h2>為什麼 N-gram 這麼有用？</h2>
+            
+            <p>N-gram 的核心精神是：<strong>一個詞的出現，會受到它「前面」的詞所影響。</strong></p>
+            
+            <p>這聽起來很像廢話，但這對電腦至關重要。</p>
+            
+            <ul>
+                <li>只看 1-gram（單字），你看到「很」，你不知道它代表什麼。</li>
+                <li>但如果看 2-gram（雙詞），你看到「<strong>天氣 很</strong>」或「<strong>很 好</strong>」，你就大概能猜到這是在描述一個狀態。</li>
+            </ul>
+            
+            <p><strong>N-gram 讓電腦從「看單字」升級到「看片語」。</strong></p>
+            
+            <p>透過分析大量文本（例如整間圖書館的書、所有維基百科的頁面），電腦可以「統計」出：</p>
+            
+            <ul>
+                <li>「今天 天氣」這個 2-gram 出現了 50 萬次。</li>
+                <li>「天氣 漢堡」這個 2-gram 只出現了 2 次。</li>
+            </ul>
+            
+            <p>電腦就會「學到」：<strong>「今天」後面接「天氣」的機率非常高。</strong> 這就是 N-gram 最基本的統計和機率理論，它雖然簡單，但威力強大。</p>
+        </div>
+
+        <!-- Applications -->
+        <div class="card">
+            <h2>N-gram 如何應用於文本挖掘？</h2>
+            
+            <p>「文本挖掘 (Text Mining)」聽起來很專業，其實就是「從一大堆文字中挖出有價值的資訊」。N-gram 在這裡扮演了關鍵的基礎角色：</p>
+        </div>
+
+        <div class="card">
+            <h3>1. 智慧型手機的「自動選字」與「自動完成」</h3>
+            
+            <div class="ngram-example">
+                <p><strong>你打：「今天」</strong></p>
+                <p><strong>手機立刻推薦：「天氣」、「心情」、「晚上」</strong></p>
+            </div>
+            
+            <p><strong>原理：</strong> 你的手機（或輸入法）已經統計過幾億個 2-gram。它知道在「今天」這個詞後面，最常出現的詞就是「天氣」、「心情」和「晚上」。這就是它推薦給你的依據。</p>
+        </div>
+
+        <div class="card">
+            <h3>2. 搜尋引擎（例如 Google）</h3>
+            
+            <div class="ngram-example">
+                <p><strong>你搜尋：「台北 好吃 餐廳」</strong></p>
+            </div>
+            
+            <p><strong>原理：</strong> Google 不只會找同時包含「台北」、「好吃」、「餐廳」這三個 1-gram（單字）的網頁。</p>
+            
+            <p>它會更聰明地去找：</p>
+            <ul>
+                <li>同時包含「<strong>台北 好吃</strong>」這個 2-gram</li>
+                <li>以及「<strong>好吃 餐廳</strong>」這個 2-gram 的網頁。</li>
+            </ul>
+            
+            <p>這樣的網頁（例如一篇食記標題「推薦這家<em>台北好吃餐廳</em>」）絕對比一篇剛好提到「<em>台北</em>...<em>好吃</em>...<em>餐廳</em>」三個不相關單字的網頁，更符合你的需求。</p>
+        </div>
+
+        <div class="card">
+            <h3>4. 找出「搭配詞」並判斷「主要議題」</h3>
+            
+            <p>這是一個更進階的應用，思路是這樣的：</p>
+            
+            <p><strong>什麼是「搭配詞」 (Collocation)？</strong></p>
+            <ul>
+                <li>就是那些很常「綁」在一起出現的詞。例如「人工 智慧」、「深度 學習」、「數據 分析」、「氣候 變遷」。</li>
+                <li>N-gram (特別是 2-gram 和 3-gram) 正是抓出搭配詞的完美工具。</li>
+            </ul>
+            
+            <p><strong>如何用 N-gram 統計搭配詞？</strong></p>
+            <ol>
+                <li>想像你有一大堆（比如一千篇）關於科技的新聞報導。</li>
+                <li>你用 N-gram (N=2) 去掃描所有文章，然後「計數」。</li>
+                <li>你會發現「<strong>人工 智慧</strong>」可能出現了 5000 次，「<strong>深度 學習</strong>」出現了 3000 次。</li>
+                <li>但像「人工 漢堡」或「深度 天氣」這種組合可能只出現 1 次或 0 次。</li>
+                <li><strong>結論：</strong> 那些「出現頻率極高」的 N-gram，就是這堆文本中的「關鍵搭配詞」。</li>
+            </ol>
+            
+            <p><strong>如何從「搭配詞」判斷「主要議題」？</strong></p>
+            <ul>
+                <li>這就是最關鍵的一步！當你統計完，拿到了「關鍵搭配詞」的清單（例如：「人工 智慧」、「深度 學習」、「模型 訓練」、「數據 科學」...）。</li>
+                <li><strong>思路：</strong> 這些詞彙群體共同指向了一個主題。</li>
+                <li>當你看到這組搭配詞，你不需要讀完整部文本，就能立刻判斷：<strong>這堆文章的主要議題是關於「AI 人工智慧」</strong>。</li>
+                <li><strong>同理：</strong> 如果你分析另一堆文章，發現最常出現的搭配詞是「氣候 變遷」、「永續 發展」、「環境 保護」，那你也能立刻判斷，這堆文章的「主要議題」是「環保與永續」。</li>
+            </ul>
+        </div>
+
+        <!-- Summary -->
+        <div class="card">
+            <h2>總結一下</h2>
+            
+            <ol>
+                <li><strong>N-gram 是什麼？</strong><br>一種把句子切成「N個詞」一組的簡單方法。</li>
+                
+                <li><strong>它有什麼用？</strong><br>它讓電腦不只看到「單字」，還能看到「<strong>詞語的順序和組合</strong>」，進而找出重要的「<strong>搭配詞</strong>」。</li>
+                
+                <li><strong>背後理論？</strong><br>透過<strong>統計</strong>和<strong>機率</strong>，電腦能「學會」哪些詞語組合很常見、哪些很罕見。</li>
+                
+                <li><strong>怎麼應用？</strong><br>你每天都在用！手機打字、Google 搜尋、看商品評價... 甚至用來分析一大堆文章的「<strong>主要議題</strong>」。</li>
+            </ol>
+            
+            <p>N-gram 雖然不是最新、最強大的技術（現在有更複雜的 AI 模型），但它非常<strong>快速、有效</strong>，而且是理解所有現代自然語言處理（NLP）技術的「第一堂課」。</p>
+        </div>
+    </div>
+
+    <!-- Scroll to top button -->
+    <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
+        ↑
+    </div>
+
+    <script>
+        // N-gram generator function
+        function generateNgrams(n) {
+            const text = document.getElementById('textInput').value;
+            const output = document.getElementById('output');
+            
+            if (!text.trim()) {
+                output.innerHTML = '<p style="color: rgba(255,255,255,0.6)">請輸入一些文字！</p>';
+                return;
+            }
+            
+            // Simple tokenization (works for Chinese and English)
+            let tokens = [];
+            if (/[\u4e00-\u9fa5]/.test(text)) {
+                // Chinese text - split by character
+                tokens = text.replace(/\s+/g, '').split('');
+            } else {
+                // English text - split by space
+                tokens = text.trim().split(/\s+/);
+            }
+            
+            if (tokens.length < n) {
+                output.innerHTML = `<p style="color: rgba(255,255,255,0.6)">文字太短了！請輸入至少 ${n} 個詞/字。</p>`;
+                return;
+            }
+            
+            const ngrams = [];
+            for (let i = 0; i <= tokens.length - n; i++) {
+                ngrams.push(tokens.slice(i, i + n).join(' '));
+            }
+            
+            let gramType = '';
+            switch(n) {
+                case 1: gramType = 'Unigram (一元語法)'; break;
+                case 2: gramType = 'Bigram (二元語法)'; break;
+                case 3: gramType = 'Trigram (三元語法)'; break;
+                default: gramType = `${n}-gram`;
+            }
+            
+            output.innerHTML = `
+                <h4 style="color: rgba(255,255,255,0.95); margin-bottom: 15px;">${gramType} 分析結果：</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    ${ngrams.map(gram => `<span class="ngram-item">${gram}</span>`).join('')}
+                </div>
+                <p style="margin-top: 15px; color: rgba(255,255,255,0.7)">共找到 ${ngrams.length} 個 ${n}-gram</p>
+            `;
+        }
+
+        // Scroll to top functionality
+        window.addEventListener('scroll', function() {
+            const scrollTop = document.getElementById('scrollTop');
+            if (window.pageYOffset > 300) {
+                scrollTop.classList.add('visible');
+            } else {
+                scrollTop.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Add smooth scroll behavior to all internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Initial animation on load
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.card').forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
